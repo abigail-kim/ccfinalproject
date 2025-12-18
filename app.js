@@ -427,80 +427,13 @@ function showDetail(p){
     }
   })();
 
-    // fetch NPS alerts for this park and render under packing
+    // fetch NPS alerts for this park: local-only mode (no /api calls)
     async function fetchNpsAlerts(park){
       try{
-        // small manual mapping for demo ids -> official NPS parkCode to improve matching
-        const PARK_CODE_MAP = {
-          'yellowstone':'yell',
-          'yosemite':'yose',
-          'grandcanyon':'grca',
-          'zion':'zion',
-          'acadia':'acad',
-          'everglades':'ever',
-          'rockymountain':'romo'
-        };
-        // prefer explicit mapping when available
-        const mapped = PARK_CODE_MAP[park.id];
-        if (mapped){
-          try{
-            const rmap = await fetch(`/api/nps/alerts?parkCode=${encodeURIComponent(mapped)}&limit=50`);
-            if (rmap.ok){ const jm = await rmap.json(); const dm = jm && jm.data; if (Array.isArray(dm) && dm.length) return dm; }
-          }catch(e){ /* continue to other fallbacks */ }
-        }
-
-        // Try common parkCode/id fields
-        const tryCodes = [];
-        if (park.parkCode) tryCodes.push(park.parkCode);
-        if (park.id) tryCodes.push(park.id);
-        // de-dupe
-        const seen = new Set();
-        for (const c of tryCodes){ if(!c) continue; if(seen.has(c)) continue; seen.add(c);
-          try{
-            const res = await fetch(`/api/nps/alerts?parkCode=${encodeURIComponent(c)}&limit=50`);
-            if (res.ok){ const j = await res.json(); const arr = j && j.data; if (Array.isArray(arr) && arr.length) return arr; }
-          }catch(e){ /* ignore and continue */ }
-        }
-
-        // fallback: search NPS parks by name and pick the nearest (if coordinates available)
-        if (park.name){
-          try{
-            const res2 = await fetch(`/api/nps/parks?q=${encodeURIComponent(park.name)}&limit=5`);
-            if (!res2.ok) return [];
-            const j2 = await res2.json();
-            const arr = j2 && j2.data;
-            if (Array.isArray(arr) && arr.length){
-              const parseNum = s => { const v = parseFloat(s); return isFinite(v) ? v : null };
-              const lat0 = parseNum(park.latitude || park.lat || (park.latLong && park.latLong.split(',')[0]));
-              const lon0 = parseNum(park.longitude || park.lon || (park.latLong && park.latLong.split(',')[1]));
-              let match = null;
-              if (lat0 != null && lon0 != null){
-                function haversine(aLat,aLon,bLat,bLon){
-                  const R = 6371; const toRad = v => v*Math.PI/180;
-                  const dLat = toRad(bLat-aLat); const dLon = toRad(bLon-aLon);
-                  const la = toRad(aLat); const lb = toRad(bLat);
-                  const t = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(la)*Math.cos(lb)*Math.sin(dLon/2)*Math.sin(dLon/2);
-                  return 2*R*Math.atan2(Math.sqrt(t), Math.sqrt(1-t));
-                }
-                let best = Infinity;
-                arr.forEach(it => {
-                  const lat1 = parseNum(it.latitude || (it.latLong && it.latLong.split(',')[0]));
-                  const lon1 = parseNum(it.longitude || (it.latLong && it.latLong.split(',')[1]));
-                  if (lat1==null || lon1==null) return;
-                  const d = haversine(lat0,lon0,lat1,lon1);
-                  if (d < best){ best = d; match = it; }
-                });
-              }
-              if (!match) match = arr.find(it => (it.fullName && it.fullName.toLowerCase().includes(park.name.toLowerCase())) || (it.name && it.name.toLowerCase().includes(park.name.toLowerCase())) ) || arr[0];
-              if (match && match.parkCode){
-                try{
-                  const r3 = await fetch(`/api/nps/alerts?parkCode=${encodeURIComponent(match.parkCode)}&limit=50`);
-                  if (r3.ok){ const j3 = await r3.json(); const a3 = j3 && j3.data; if (Array.isArray(a3)) return a3; }
-                }catch(e){ /* ignore */ }
-              }
-            }
-          }catch(e){ /* ignore */ }
-        }
+        if (!park) return [];
+        // prefer alerts embedded in local data
+        if (Array.isArray(park.alerts) && park.alerts.length) return park.alerts;
+        // otherwise return empty list (do not attempt network calls)
         return [];
       }catch(e){ return [] }
     }
@@ -570,80 +503,14 @@ function showDetail(p){
         const res = await fetch(`/api/nps/parks?parkCode=${encodeURIComponent(parkCode)}&limit=1`);
         if (res.ok){
           const j = await res.json();
-          const data = j && j.data && j.data[0];
-          if (data && data.images && data.images.length) return { images: data.images.map(it=>({url:it.url,credit:it.credit||it.title||''})) };
-        }
-      }
-      // fallback: search by park name using q param
-      if (park.name){
-        const res2 = await fetch(`/api/nps/parks?q=${encodeURIComponent(park.name)}&limit=5`);
-  if (!res2.ok) return null;
-  const j2 = await res2.json();
-  const arr = j2 && j2.data;
-  if (Array.isArray(arr) && arr.length){
-            // if we have coordinates for our local park, pick the NPS result nearest by lat/lon
-            const parseNum = s => { const v = parseFloat(s); return isFinite(v) ? v : null };
-            const lat0 = parseNum(park.latitude || park.lat || (park.latLong && park.latLong.split(',')[0]));
-            const lon0 = parseNum(park.longitude || park.lon || (park.latLong && park.latLong.split(',')[1]));
-            let match = null;
-            if (lat0 != null && lon0 != null){
-              function haversine(aLat,aLon,bLat,bLon){
-                const R = 6371; const toRad = v => v*Math.PI/180;
-                const dLat = toRad(bLat-aLat); const dLon = toRad(bLon-aLon);
-                const la = toRad(aLat); const lb = toRad(bLat);
-                const t = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(la)*Math.cos(lb)*Math.sin(dLon/2)*Math.sin(dLon/2);
-                return 2*R*Math.atan2(Math.sqrt(t), Math.sqrt(1-t));
-              }
-              let best = Infinity;
-              arr.forEach(it => {
-                const lat1 = parseNum(it.latitude || (it.latLong && it.latLong.split(',')[0]));
-                const lon1 = parseNum(it.longitude || (it.latLong && it.latLong.split(',')[1]));
-                if (lat1==null || lon1==null) return;
-                const d = haversine(lat0,lon0,lat1,lon1);
-                if (d < best){ best = d; match = it; }
-              });
-            }
-            // fallback to simple name match or first item
-            if (!match) match = arr.find(it => (it.fullName && it.fullName.toLowerCase().includes(park.name.toLowerCase())) || (it.name && it.name.toLowerCase().includes(park.name.toLowerCase())) ) || arr[0];
-            if (match && match.images && match.images.length) return { images: match.images.map(it=>({url:it.url,credit:it.credit||it.title||''})) };
-          }
-      }
-      return null;
-    }catch(e){ return null }
-  }
-
-  // fetch and apply NPS images asynchronously (do not block UI)
-  (async ()=>{
-    try{
-      const npsImg = await fetchNpsParkImages(p);
-      const imgEl = document.getElementById('parkImage');
-      const creditEl = document.getElementById('heroCredit');
-      if (npsImg && Array.isArray(npsImg.images) && npsImg.images.length){
-        parkImages = npsImg.images;
-        imgEl.src = parkImages[0].url; imgEl.dataset.real = '1'; imgEl.alt = p.name + ' photo';
-        if (creditEl && parkImages[0].credit){ creditEl.textContent = parkImages[0].credit; creditEl.style.display = 'block'; }
-      }
-    }catch(e){ /* ignore */ }
-  })();
-
-  // start tailored ambient sound for this park only if enabled for this park
-  try{
-    // Do not auto-start ambient audio when opening a park detail. Stop any playing ambient instead.
-    try{ _audioEngine.stop(); }catch(e){}
-  }catch(e){ console.warn('audio preset error', e); _audioEngine.stop(); }
-  if (p && p.challenge) {
-    const c = p.challenge;
-    if (challengeEl) challengeEl.textContent = (c.title || '') + ' — ' + (c.description || '');
-    _currentPackingActivity = `park-challenge:${p.id}`;
-    renderPacking(_currentPackingActivity, Array.isArray(c.packing) ? c.packing : []);
-  } else {
-    const acts = (window && window._activities) ? window._activities : null;
-    if (acts && Array.isArray(acts) && acts.length) {
-      const key = (p.id || p.name || '');
-      let h = 0; for (let i = 0; i < key.length; i++) { h = ((h << 5) - h) + key.charCodeAt(i); h |= 0; }
-      const day = new Date().getDate();
-      const idx = Math.abs(h + day) % acts.length;
-      const chosen = acts[idx];
+            // Offline/local-only mode: do not call any /api or remote NPS endpoints.
+            // Prefer any embedded alerts on the local park object; otherwise return an empty list.
+            try{
+              if (!park) return [];
+              if (Array.isArray(park.alerts) && park.alerts.length) return park.alerts;
+              // If nothing available locally, show no alerts rather than attempting a network call
+              return [];
+            }catch(e){ return [] }
       if (challengeEl) challengeEl.textContent = chosen.title + ' — ' + (chosen.description || '');
       _currentPackingActivity = chosen.id || `challenge-${idx}-${key}`;
       renderPacking(_currentPackingActivity, chosen.packing || []);
@@ -780,7 +647,7 @@ function showDetail(p){
     if (visitBarEl) visitBarEl.style.width = pct + '%';
   }
 
-  // download goals as human-readable text
+  // download goals as human-readable text (client-side)
   const _downloadGoalsBtn = document.getElementById('downloadGoals');
   if (_downloadGoalsBtn) _downloadGoalsBtn.addEventListener('click', async ()=>{
     const key = p.id || p.name || ('park-'+p.name);
@@ -789,14 +656,12 @@ function showDetail(p){
       const lines = [];
       lines.push(`Goals for ${p.name} (${key})`);
       lines.push('');
-      (state.goals || []).forEach(g => {
-        lines.push((g.done ? '[x] ' : '[ ] ') + g.text);
-      });
+      (state.goals || []).forEach(g => { lines.push((g.done ? '[x] ' : '[ ] ') + g.text); });
       const content = lines.join('\n');
-      const res = await fetch('/api/save-file', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ filename: `${key}-goals.txt`, content }) });
-      const j = await res.json().catch(()=>null);
-      if (j && j.ok) alert('Saved to Downloads: ' + j.path);
-      else alert('Save failed');
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const fileBase = String((p && (p.fullName||p.name)) ? (p.fullName||p.name) : key).replace(/[\s\/\\:]/g,'_').toLowerCase();
+      const a = document.createElement('a'); a.href = url; a.download = `${fileBase}-goals.txt`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }catch(e){ alert('Save failed: '+String(e)) }
   });
 
@@ -831,10 +696,10 @@ function showDetail(p){
 
     try{
       const content = lines.join('\n');
-      const res = await fetch('/api/save-file', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ filename: `${key}-report.txt`, content }) });
-      const j = await res.json().catch(()=>null);
-      if (j && j.ok) alert('Saved report to Downloads: ' + j.path);
-      else alert('Save failed');
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const fileBase = String((p && (p.fullName||p.name)) ? (p.fullName||p.name) : key).replace(/[\s\/\\:]/g,'_').toLowerCase();
+      const a = document.createElement('a'); a.href = url; a.download = `${fileBase}-report.txt`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
     }catch(e){ alert('Save failed: '+String(e)) }
   });
 
