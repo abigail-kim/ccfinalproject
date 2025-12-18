@@ -2,7 +2,7 @@
 async function fetchParks(){
   // Load parks only from the local data file. Live NPS API is ignored.
   try{
-    const res = await fetch('/data/parks.json');
+  const res = await fetch('data/parks.json');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     return await res.json();
   }catch(e){ console.warn('Failed to load local parks.json', e); return []; }
@@ -203,9 +203,9 @@ const _audioEngine = (function(){
     try{
       const ns = getNatureStyleFor(parkKey||id||'');
       if (ns === 'birds'){
-        // small set of sample names - developer should place these under /assets/birds/
-        const birdSamples = ['bird1.wav','bird2.wav','bird3.wav'];
-        birdSamples.forEach((fname, idx)=>{ const url = `/assets/birds/${fname}`; loadSample(`bird${idx+1}`, url).catch(()=>{}); });
+  // small set of sample names - developer should place these under assets/birds/
+  const birdSamples = ['bird1.wav','bird2.wav','bird3.wav'];
+  birdSamples.forEach((fname, idx)=>{ const url = `assets/birds/${fname}`; loadSample(`bird${idx+1}`, url).catch(()=>{}); });
       }
     }catch(e){}
 
@@ -355,7 +355,7 @@ function showDetail(p){
   d.innerHTML = `
     <div class="detail-inner">
       <div class="park-hero">
-        <img id="parkImage" src="/assets/placeholder.svg" alt="" loading="lazy" />
+  <img id="parkImage" src="assets/placeholder.svg" alt="" loading="lazy" />
         <div class="hero-overlay">
           <div class="hero-title" id="heroTitle">${p.name}</div>
           <div class="hero-sub" id="heroSub">${p.state} • ${p.established}</div>
@@ -384,7 +384,7 @@ function showDetail(p){
           <div style="min-width:140px">
             <div style="display:flex;flex-direction:column;gap:.5rem"><button id="downloadGoals">Download goals</button><button id="downloadReport">Download report</button><button id="resetVisits" class="reset-btn">Reset</button></div>
             <div style="margin-top:.6rem">
-              <img id="goalPreview" src="/assets/placeholder.svg" alt="Goal preview" style="width:100%;height:120px;object-fit:cover;border-radius:6px;display:none;margin-top:.5rem" />
+              <img id="goalPreview" src="assets/placeholder.svg" alt="Goal preview" style="width:100%;height:120px;object-fit:cover;border-radius:6px;display:none;margin-top:.5rem" />
             </div>
           </div>
         </div>
@@ -471,9 +471,9 @@ function showDetail(p){
     if (imgEl){
       // prefer NPS-style array, otherwise p.image or p.photo
       const src = (p.images && p.images[0] && p.images[0].url) ? p.images[0].url : (p.image || p.photo || '');
-      if (src){ imgEl.src = src; imgEl.alt = p.name + ' photo'; imgEl.dataset.real = '1'; }
-      else { imgEl.src = '/assets/placeholder.svg'; imgEl.alt = 'No image'; imgEl.dataset.real = '0'; }
-      imgEl.onerror = ()=>{ imgEl.src = '/assets/placeholder.svg'; imgEl.dataset.real = '0'; };
+  if (src){ imgEl.src = src; imgEl.alt = p.name + ' photo'; imgEl.dataset.real = '1'; }
+  else { imgEl.src = 'assets/placeholder.svg'; imgEl.alt = 'No image'; imgEl.dataset.real = '0'; }
+  imgEl.onerror = ()=>{ imgEl.src = 'assets/placeholder.svg'; imgEl.dataset.real = '0'; };
       imgEl.onclick = ()=>{ if (imgEl.dataset.real === '1') window.open(imgEl.src, '_blank'); };
       if (creditEl) { creditEl.style.display = 'none'; creditEl.textContent = ''; }
     }
@@ -600,7 +600,7 @@ function showDetail(p){
         const preview = document.getElementById('goalPreview');
         if (!preview) return;
         if (parkImages && parkImages.length){ preview.src = parkImages[idx % parkImages.length].url; preview.style.display = 'block'; }
-        else { preview.src = '/assets/placeholder.svg'; preview.style.display = 'block'; }
+  else { preview.src = 'assets/placeholder.svg'; preview.style.display = 'block'; }
       });
       li.appendChild(chk); li.appendChild(span); li.appendChild(del); visitListEl.appendChild(li);
     });
@@ -740,7 +740,7 @@ function saveVisit(parkId,obj){ localStorage.setItem(visitKey(parkId), JSON.stri
 (async ()=>{
   async function loadLocalParks(){
     try{
-      const res = await fetch('/data/parks.json');
+  const res = await fetch('data/parks.json');
       if (!res.ok) throw new Error('HTTP '+res.status);
       const data = await res.json();
       return data;
@@ -753,7 +753,7 @@ function saveVisit(parkId,obj){ localStorage.setItem(visitKey(parkId), JSON.stri
 
   async function loadLocalActivities(){
     try{
-      const res = await fetch('/data/activities.json');
+  const res = await fetch('data/activities.json');
       if (!res.ok) throw new Error('HTTP '+res.status);
       const data = await res.json();
       return data;
@@ -842,7 +842,7 @@ setTimeout(checkNpsStatus, 800);
 ;(async function(){
   // Load activities from local file and ignore live API
   try{
-    const actsRes = await fetch('/data/activities.json');
+  const actsRes = await fetch('data/activities.json');
     if (!actsRes.ok) throw new Error('HTTP ' + actsRes.status);
     const acts = await actsRes.json();
     if (acts && acts.length){
@@ -1164,7 +1164,7 @@ function renderNpsFacilitiesOnMap(facilities){
   const DISPLAY_MAP = { 'FEET': 'FEET' };
     const desiredPaths = order.map(n=>{
       const fname = NAME_MAP[n] ? NAME_MAP[n] : (n + '.mp3');
-      return encodeURI('/assets/' + fname);
+  return encodeURI('assets/' + fname);
     });
     // map existing playlist entries by url for reuse
     const existing = new Map(playlist.map(p=>[String(p.url||''), p]));
