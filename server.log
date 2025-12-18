@@ -1,0 +1,33 @@
+[dotenv@17.2.3] injecting env (1) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+Using NPS API key from NPS_API_KEY
+Server running http://localhost:3000
+[proxy] -> GET https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+[cache] SET https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr ttl_ms 300000
+wrote file to /Users/abigailkim/Downloads/birdwatching-packing.txt
+[cache] HIT https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+wrote file to /Users/abigailkim/Downloads/park-challenge_zion-packing.txt
+[cache] HIT https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+[proxy] -> GET https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+[cache] SET https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr ttl_ms 300000
+[cache] HIT https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+wrote file to /Users/abigailkim/Downloads/zion-goals.txt
+[proxy] -> GET https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+[cache] SET https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr ttl_ms 300000
+wrote file to /Users/abigailkim/Downloads/yosemite-report.txt
+[proxy] -> GET https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+[cache] SET https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr ttl_ms 300000
+wrote file to /Users/abigailkim/Downloads/yosemite-report.txt
+wrote file to /Users/abigailkim/Downloads/everglades-report.txt
+[cache] HIT https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+wrote file to /Users/abigailkim/Downloads/everglades-report.txt
+[cache] HIT https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+[cache] HIT https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+[proxy] -> GET https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+[cache] SET https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr ttl_ms 300000
+[cache] HIT https://developer.nps.gov/api/v1/parks?limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+[proxy] -> GET https://developer.nps.gov/api/v1/parks?parkCode=yellowstone&limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+[cache] SET https://developer.nps.gov/api/v1/parks?parkCode=yellowstone&limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr ttl_ms 300000
+[proxy] -> GET https://developer.nps.gov/api/v1/parks?parkCode=yosemite&limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+[cache] SET https://developer.nps.gov/api/v1/parks?parkCode=yosemite&limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr ttl_ms 300000
+[proxy] -> GET https://developer.nps.gov/api/v1/parks?parkCode=grandcanyon&limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr
+[cache] SET https://developer.nps.gov/api/v1/parks?parkCode=grandcanyon&limit=1&api_key=Wp20JF1fJDDwFfihlUIZafeyGLMYr3vCypWFicSr ttl_ms 300000

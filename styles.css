@@ -1,0 +1,218 @@
+#clearPacking { background:#ef4444; color:#fff; border:0; padding:.35rem .6rem; border-radius:6px }
+#clearPacking:hover { filter:brightness(.95) }
+/* packing delete buttons */
+.packing-delete { background:#ef4444; color:#fff; border:0; padding:.2rem .45rem; border-radius:6px }
+.packing-delete:hover { filter:brightness(.95) }
+.root, :root {
+	--text: #f7f7ec;
+	--panel-shadow: 0 6px 18px rgba(8,10,12,0.08);
+	/* darker national-park-inspired palette (tinted backgrounds) */
+	/* store RGB triples to create translucent tints for backgrounds */
+	/* user-provided hex palette */
+	--c1: #755C1B;
+	--c2: #7A4419;
+	--c3: #A64F03;
+	--c4: #400406;
+	/* add a green accent palette for motivations */
+	--g1: #1f6f2b;
+	--g2: #2a9d3a;
+	--g3: #66c28b;
+	--g4: #a7f3d0;
+	/* olive used as main page background */
+	--olive: #BAE5F9;
+	/* translucent tints for panel backgrounds */
+	--panel-bg-1: var(--c1);
+	--panel-bg-2: var(--c2);
+	--panel-bg-3: var(--c3);
+	--panel-bg-4: var(--c4);
+	--accent: var(--c3);
+}
+
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#2b3418;color:#f7f7ec;margin:0;padding:0}
+.site-header{background:#062a52;color:#fff;padding:2rem;text-align:center}
+
+/* Ensure header controls sit above other content and are clickable */
+.site-header { position: relative; }
+.site-header button { position: relative; z-index: 9999; cursor: pointer; }
+.site-header span#npsStatus { position: relative; z-index: 9999; }
+#layout-wide .container{max-width:1200px}
+#container{display:flex;}
+.container{display:flex;gap:2rem;padding:2rem;max-width:1100px;margin:1rem auto}
+#parks{list-style:none;padding:0;margin:0;flex:0 0 360px;min-width:320px}
+#parks li{background:var(--panel-bg-1);padding:1rem;border-radius:8px;margin-bottom:.75rem;box-shadow:var(--panel-shadow);cursor:pointer;color:var(--text)}
+#detail{flex:2 1 480px;padding:0;border-radius:8px;color:var(--text)}
+.detail-inner{background:var(--panel-bg-2);padding:1rem;border-radius:8px;box-shadow:0 4px 12px rgba(2,6,23,0.04)}
+
+/* when #detail has .short-bg, only the .detail-inner receives the panel background and the rest stays transparent */
+#detail.short-bg{background:transparent}
+
+/* specific panels */
+#challenge{background:var(--panel-bg-3) !important;color:var(--text)}
+#packing{background:var(--panel-bg-4) !important;color:var(--text)}
+#visitPanel{background:var(--panel-bg-4);color:var(--text)}
+
+/* ensure inputs and small buttons stay readable on dark backgrounds */
+#packing input, #visitPanel input, input#search { background: #fff; color: #0f172a; border: 1px solid rgba(0,0,0,0.08); padding: .45rem; border-radius:6px }
+#packing button, #visitPanel button, button { background:#ffd27a; color:#0f172a; border:0; padding:.4rem .6rem; border-radius:6px }
+.fav-btn{color: #ffd27a}
+.fav-btn[aria-pressed="true"], .fav-btn[aria-pressed="false"]{color:#ffd27a}
+
+/* allow toggling a wider layout by adding class `layout-wide` to <body> or html */
+body.layout-wide #detail, body.layout-wide .container{max-width:1200px}
+
+@media (max-width:800px){
+	.container{flex-direction:column;padding:1rem}
+	#detail{flex:1 1 auto;min-width:auto}
+}
+input#search{width:100%;padding:.6rem;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:1rem}
+
+/* favorite button styling */
+.fav-btn{background:transparent;border:0;font-size:1.1rem;cursor:pointer;padding:0 0.25rem}
+.fav-btn[aria-pressed="true"]{color:#f59e0b}
+.fav-btn[aria-pressed="false"]{color:#94a3b8}
+
+/* Add extra spacing below favorites so playlist sits lower */
+#favorites{ margin-bottom: 3rem; }
+
+/* sound button: subtle like the favorite star */
+
+
+/* visit tracker */
+#visitBarWrap{background:#e6eef8;border-radius:8px;height:12px;overflow:hidden}
+#visitBar{height:12px;background:var(--accent);width:0%}
+#visitPanel h4{margin:0 0 .5rem 0;font-size:1rem}
+
+
+#map{width:100%;height:260px;border-radius:8px;box-shadow:0 4px 12px rgba(2,6,23,0.06);margin-bottom:.5rem}
+
+/* park hero */
+.park-hero{position:relative;border-radius:8px;overflow:hidden;margin-bottom:1rem}
+.park-hero img{width:100%;height:320px;object-fit:cover;display:block}
+.park-hero .hero-overlay{position:absolute;left:0;right:0;bottom:0;padding:1rem;background:linear-gradient(180deg,rgba(0,0,0,0) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.75) 100%);color:var(--text)}
+.park-hero .hero-title{font-size:1.6rem;margin:0;font-weight:800}
+.park-hero .hero-sub{font-size:1rem;opacity:0.9;margin-top:0.25rem}
+.park-hero .hero-credit{font-size:.85rem;color:rgba(247,247,236,0.85);margin-top:.5rem}
+
+/* brighter, non-yellow accent for certain labels */
+/* headings and labels */
+#visitPanel h4, #packingTitle { color: #ff7a6b; font-weight:700 }
+#parkMotivation { color: var(--olive); font-weight:700 }
+
+/* make park title, packing name/title and motivation more prominent */
+#detail h2 { color: #ffffff; text-shadow: 0 1px 0 rgba(0,0,0,0.25) }
+#packingTitle { color: #ffffff; font-weight:800; text-shadow: 0 1px 0 rgba(0,0,0,0.2) }
+#packingName { color: #ffd27a; font-weight:800; text-shadow: 0 1px 0 rgba(0,0,0,0.2) }
+
+/* use the same orange accent for visit-related labels */
+.visit-label { color: var(--accent); font-weight:600 }
+
+/* Override generic button rule: make packing clear/delete buttons red */
+#packing #clearPacking, #packing .packing-delete {
+	background: #ef4444 !important;
+	color: #fff !important;
+	border: 0;
+}
+#packing .packing-delete:hover, #packing #clearPacking:hover { filter: brightness(.95) }
+
+/* visit progress delete button matches packing style */
+#visitPanel .goal-delete, #visitPanel button.goal-delete {
+	background: #ef4444 !important;
+	color: #fff !important;
+	border: 0;
+	padding: .2rem .45rem;
+	border-radius:6px;
+}
+#visitPanel .goal-delete:hover { filter: brightness(.95) }
+
+/* reset button styling — match yellow accent used elsewhere */
+.reset-btn { background: #ef4444; color:#fff; border:0; padding:.35rem .5rem; border-radius:6px }
+.reset-btn:hover { filter: brightness(.95) }
+
+/* ensure Reset button inside visit panel is red even if other rules exist */
+#visitPanel .reset-btn { background: #ef4444 !important; color: #fff !important; }
+
+
+/* NPS alerts box styling: warm brown with readable contrast */
+.nps-alerts{
+	background: #351E10;
+	border: 1px solid rgba(0,0,0,0.12);
+	padding: 0.6rem;
+	border-radius: 8px;
+	color: var(--text);
+}
+.nps-alerts > div.title{ font-weight:700; margin-bottom:.4rem }
+.nps-alerts a{ color: #ffd27a }
+
+/* specific highlight for certain alert titles */
+.nps-alerts .alert-yellow{ background: rgba(255,230,120,0.08); border-left: 4px solid #ffd27a; padding: .45rem .5rem; border-radius:6px }
+
+/* Productivity chart */
+#productivityWrap { background: rgba(255,255,255,0.02); }
+#productivityChart svg { width: 100%; height: 100px; display:block }
+#productivityChart .grid { stroke: rgba(255,255,255,0.06); stroke-width:1 }
+#productivityChart .line { fill:none; stroke:#ffd27a; stroke-width:2 }
+#productivityChart .area { fill: rgba(255,210,122,0.08) }
+#productivityChart .dot { fill:#ffd27a; stroke:#fff; stroke-width:0.6 }
+
+/* Constrain park hero overlay content so the orange/yellow title area doesn't stretch edge-to-edge */
+.park-hero .hero-overlay > .hero-title,
+.park-hero .hero-overlay > .hero-sub,
+.park-hero .hero-overlay > .hero-credit {
+	max-width: 760px;
+	margin-left: auto;
+	margin-right: auto;
+	padding-left: 0.5rem;
+	padding-right: 0.5rem;
+	text-align: center; /* keep the title/sub centered within the constrained box */
+}
+
+/* Slightly reduce the overlay padding on very small screens */
+@media (max-width:520px){
+	.park-hero .hero-overlay{ padding:0.6rem }
+	.park-hero .hero-overlay > .hero-title{ font-size:1.25rem }
+}
+
+/* Playlist panel styling */
+#playlistPanel h3{ margin-top:0 }
+#playlist{ margin-top:0.5rem }
+#playlist li{ padding:0.35rem 0.25rem; display:flex; justify-content:space-between; align-items:center }
+#playlist li button{ background:transparent;border:0;color:#ffd27a;cursor:pointer }
+#playlist li.playing{ background: #394627; border-radius:6px; padding:0.5rem; color:#ffffff }
+/* per-item remaining time (right side of li) */
+.item-remaining{ color: rgba(243,241,224,0.9); font-size:.85rem; margin-left:1rem }
+#playlistControls button{ background:#ffd27a;border:0;padding:.35rem .5rem;border-radius:6px }
+#nowPlaying{ color:#e6eef8 }
+
+/* Ensure pointer cursor for playlist controls and clickable tracks */
+#plPlay, #plPrev, #plNext, #playlistPanel button, #playlist li span, #playlist li.playing span {
+	cursor: pointer !important;
+	pointer-events: auto !important;
+}
+
+/* keep non-clickable list areas default */
+#playlist li { cursor: default; }
+
+/* Make the playlist panel align flush with the left/right of the column */
+#playlistPanel{ padding-left:0; padding-right:0.6rem; width:100%; box-sizing:border-box; 
+	background: #6E7346; /* updated playlist box color */
+	color: #ffffff; /* make playlist text white */
+	border-radius:8px;
+	padding:0.6rem;
+	box-shadow: var(--panel-shadow);
+}
+/* ensure specific child elements are white even if inline styles exist */
+#playlistPanel h3, #playlistPanel #nowPlaying, #playlistPanel #playlist, #playlistPanel #playlist span { color: #ffffff !important }
+#playlistPanel #playlist li { color: #ffffff }
+/* color for the Now playing track title */
+.now-title{ color: #f3f1e0 !important; font-weight:600 }
+/* time remaining badge next to Now playing */
+.now-remaining{ color: rgba(243,241,224,0.9); font-size:.85rem; margin-left:.4rem }
+/* playlist blurb styling */
+.playlist-blurb{ font-size: .78rem; max-width:220px }
+@media(max-width:800px){ .playlist-blurb{ display:none } }
+/* improved wrapping for justified blurb */
+.playlist-blurb{ text-align:left }
+#playlistPanel > * { box-sizing:border-box; width:100%; padding-left:0; padding-right:0 }
+#playlistPanel #playlistControls{ padding:0.5rem 0 }
+#playlistPanel #playlist{ padding-left:1rem; padding-right:0 }
+

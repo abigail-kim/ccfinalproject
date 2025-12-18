@@ -1,0 +1,5 @@
+[
+  {"id":"hiking","title":"Go for a short hike","description":"Find an easy trail near you and walk for 30–60 minutes.","packing":["Water bottle","Comfortable shoes","Sunscreen","Hat"]},
+  {"id":"birdwatching","title":"Try birdwatching","description":"Bring binoculars or use your phone camera to spot and identify birds.","packing":["Binoculars (optional)","Notebook","Field guide app"]},
+  {"id":"picnic","title":"Have a picnic","description":"Pack a small meal and enjoy it outdoors at a park overlook or meadow.","packing":["Snack/meal","Blanket","Reusable utensils","Trash bag"]}
+]

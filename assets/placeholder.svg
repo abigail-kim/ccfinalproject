@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#cfe5b9" />
+      <stop offset="1" stop-color="#9fb87a" />
+    </linearGradient>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#g)" />
+  <g fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-weight="700">
+    <text x="50%" y="45%" text-anchor="middle" font-size="48">No image available</text>
+    <text x="50%" y="60%" text-anchor="middle" font-size="22">Select another park or try the live API for photos</text>
+  </g>
+</svg>

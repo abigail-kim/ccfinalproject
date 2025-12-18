@@ -1,0 +1,107 @@
+[
+  {
+    "id": "yellowstone",
+    "name": "Yellowstone National Park",
+    "state": "WY/MT/ID",
+    "established": "1872",
+    "description": "First national park in the U.S., known for geysers and wildlife.",
+    "latitude": "44.6",
+    "longitude": "-110.5",
+    "challenge": {
+      "title": "Spot a geyser eruption",
+      "description": "Try to watch Old Faithful or another geyser erupt and note its interval.",
+      "packing": ["Camera", "Water bottle", "Warm jacket"]
+    }
+  ,"motivation": "Keep your eyes open — nature has surprises!"
+  },
+  {
+    "id": "yosemite",
+    "name": "Yosemite National Park",
+    "state": "CA",
+    "established": "1890",
+    "description": "Famous for granite cliffs, waterfalls, and giant sequoias.",
+    "latitude": "37.8651",
+    "longitude": "-119.5383",
+    "challenge": {
+      "title": "Hike to a waterfall",
+      "description": "Find and hike to one of Yosemite's waterfalls and take a photo from the viewpoint.",
+      "packing": ["Hiking shoes", "Rain jacket", "Snack"]
+    }
+  ,"motivation": "Take your time — the views reward the climb."
+  },
+  {
+    "id": "grandcanyon",
+    "name": "Grand Canyon National Park",
+    "state": "AZ",
+    "established": "1919",
+    "description": "Known for its immense canyon carved by the Colorado River.",
+    "latitude": "36.1069",
+    "longitude": "-112.1129",
+    "challenge": {
+      "title": "Watch sunrise over the canyon",
+      "description": "Get up early and see the canyon at sunrise from a viewpoint.",
+      "packing": ["Headlamp", "Warm layers", "Camera"]
+    }
+  ,"motivation": "Early mornings bring the best light — cherish the quiet."
+  },
+  {
+    "id": "zion",
+    "name": "Zion National Park",
+    "state": "UT",
+    "established": "1919",
+    "description": "Deep red canyons and high plateaus for hiking and canyoneering.",
+    "latitude": "37.2982",
+    "longitude": "-113.0263",
+    "challenge": {
+      "title": "Explore a slot canyon",
+      "description": "Walk a short slot canyon or narrow section and observe the rock striations.",
+      "packing": ["Sturdy shoes", "Water", "Sunscreen"]
+    }
+  ,"motivation": "Be curious and careful — every canyon has a story."
+  },
+  {
+    "id": "acadia",
+    "name": "Acadia National Park",
+    "state": "ME",
+    "established": "1919",
+    "description": "Coastal park with rocky beaches, forests, and scenic carriage roads.",
+    "latitude": "44.3386",
+    "longitude": "-68.2733",
+    "challenge": {
+      "title": "Tidepool exploration",
+      "description": "Visit a rocky shoreline at low tide and spot sea life in tidepools.",
+      "packing": ["Tide chart", "Water shoes", "Field guide"]
+    }
+  ,"motivation": "Slow down and look closely — tiny worlds await."
+  },
+  {
+    "id": "everglades",
+    "name": "Everglades National Park",
+    "state": "FL",
+    "established": "1947",
+    "description": "A vast network of wetlands and slow-moving waters, home to unique wildlife.",
+    "latitude": "25.2866",
+    "longitude": "-80.8987",
+    "challenge": {
+      "title": "Birdwatching at dawn",
+      "description": "Find a quiet spot to observe wading birds and note at least three species.",
+      "packing": ["Binoculars", "Insect repellent", "Water bottle"]
+    }
+  ,"motivation": "Patience pays off — listen for wings and calls."
+  },
+  {
+    "id": "rockymountain",
+    "name": "Rocky Mountain National Park",
+    "state": "CO",
+    "established": "1915",
+    "description": "Alpine peaks, hiking trails, and abundant wildlife.",
+    "latitude": "40.3428",
+    "longitude": "-105.6836",
+    "challenge": {
+      "title": "Summit a viewpoint",
+      "description": "Hike to a high viewpoint and take in the alpine scenery.",
+      "packing": ["Layered clothing", "Trail map", "Trekking poles"]
+    }
+  ,"motivation": "Breathe deep — you're standing where the sky feels close."
+  }
+]
