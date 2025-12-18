@@ -1,14 +1,11 @@
   
 async function fetchParks(){
-  // prefer search endpoint when searching live, otherwise return static list
   try{
-    const res = await fetch('/api/parks');
-    if(res.ok) return await res.json();
-  }catch(e){ }
-  try{
-    const res = await fetch('/data/parks.json');
+    const res = await fetch('/data/parks.json'); // always use static JSON
     return await res.json();
-  }catch(e){ return [] }
+  }catch(e){ 
+    return [] 
+  }
 }
 
 // --- lightweight WebAudio ambient engine (no external files) ---
@@ -1116,9 +1113,7 @@ function renderPacking(activityId, defaults){
 
 const _addPackingBtn = document.getElementById('addPacking');
 if (_addPackingBtn) _addPackingBtn.addEventListener('click', ()=>{
-  const input = document.getElementById('packingInput'); const text = input && input.value.trim(); if(!text) return;
-  let actId = currentActivityIdForPacking();
-  if (!actId) actId = 'default'; // allow packing without an explicit activity
+  const input = document.getElementById('packingInput'); const text = input && input.value.trim(); if(!text) return; const actId = currentActivityIdForPacking(); if(!actId) return alert('Select an activity or challenge first');
   const items = loadPacking(actId); items.push({text,done:false}); savePacking(actId, items); if (input) input.value=''; renderPacking(actId, []);
 });
 // support Enter key in packing input
