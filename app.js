@@ -1085,7 +1085,7 @@ setTimeout(checkNpsStatus, 800);
       const chosen = acts[idx];
       const challengeEl = document.getElementById('challengeContent');
       if (challengeEl) challengeEl.textContent = chosen.title + ' — ' + chosen.description;
-      // set current activity for packing and render interactive checklist (persisted in localStorage)
+      // set current activity for packing to the challenge (packing still available via challenge)
       _currentPackingActivity = chosen.id || `challenge-${idx}`;
       renderPacking(_currentPackingActivity, chosen.packing || []);
     }
@@ -1116,7 +1116,9 @@ function renderPacking(activityId, defaults){
 
 const _addPackingBtn = document.getElementById('addPacking');
 if (_addPackingBtn) _addPackingBtn.addEventListener('click', ()=>{
-  const input = document.getElementById('packingInput'); const text = input && input.value.trim(); if(!text) return; const actId = currentActivityIdForPacking(); if(!actId) return alert('Select an activity or challenge first');
+  const input = document.getElementById('packingInput'); const text = input && input.value.trim(); if(!text) return;
+  let actId = currentActivityIdForPacking();
+  if (!actId) actId = 'default'; // allow packing without an explicit activity
   const items = loadPacking(actId); items.push({text,done:false}); savePacking(actId, items); if (input) input.value=''; renderPacking(actId, []);
 });
 // support Enter key in packing input
