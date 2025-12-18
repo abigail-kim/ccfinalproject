@@ -1,11 +1,14 @@
   
 async function fetchParks(){
-  // Load parks only from the local data file. Live NPS API is ignored.
+  // prefer search endpoint when searching live, otherwise return static list
   try{
-  const res = await fetch('data/parks.json');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const res = await fetch('/api/parks');
+    if(res.ok) return await res.json();
+  }catch(e){ }
+  try{
+    const res = await fetch('/data/parks.json');
     return await res.json();
-  }catch(e){ console.warn('Failed to load local parks.json', e); return []; }
+  }catch(e){ return [] }
 }
 
 // --- lightweight WebAudio ambient engine (no external files) ---
@@ -203,9 +206,9 @@ const _audioEngine = (function(){
     try{
       const ns = getNatureStyleFor(parkKey||id||'');
       if (ns === 'birds'){
-  // small set of sample names - developer should place these under assets/birds/
-  const birdSamples = ['bird1.wav','bird2.wav','bird3.wav'];
-  birdSamples.forEach((fname, idx)=>{ const url = `assets/birds/${fname}`; loadSample(`bird${idx+1}`, url).catch(()=>{}); });
+        // small set of sample names - developer should place these under /assets/birds/
+        const birdSamples = ['bird1.wav','bird2.wav','bird3.wav'];
+        birdSamples.forEach((fname, idx)=>{ const url = `/assets/birds/${fname}`; loadSample(`bird${idx+1}`, url).catch(()=>{}); });
       }
     }catch(e){}
 
@@ -355,7 +358,7 @@ function showDetail(p){
   d.innerHTML = `
     <div class="detail-inner">
       <div class="park-hero">
-  <img id="parkImage" src="assets/placeholder.svg" alt="" loading="lazy" />
+        <img id="parkImage" src="/assets/placeholder.svg" alt="" loading="lazy" />
         <div class="hero-overlay">
           <div class="hero-title" id="heroTitle">${p.name}</div>
           <div class="hero-sub" id="heroSub">${p.state} • ${p.established}</div>
@@ -384,7 +387,7 @@ function showDetail(p){
           <div style="min-width:140px">
             <div style="display:flex;flex-direction:column;gap:.5rem"><button id="downloadGoals">Download goals</button><button id="downloadReport">Download report</button><button id="resetVisits" class="reset-btn">Reset</button></div>
             <div style="margin-top:.6rem">
-              <img id="goalPreview" src="assets/placeholder.svg" alt="Goal preview" style="width:100%;height:120px;object-fit:cover;border-radius:6px;display:none;margin-top:.5rem" />
+              <img id="goalPreview" src="/assets/placeholder.svg" alt="Goal preview" style="width:100%;height:120px;object-fit:cover;border-radius:6px;display:none;margin-top:.5rem" />
             </div>
           </div>
         </div>
@@ -427,13 +430,80 @@ function showDetail(p){
     }
   })();
 
-    // fetch NPS alerts for this park: local-only mode (no /api calls)
+    // fetch NPS alerts for this park and render under packing
     async function fetchNpsAlerts(park){
       try{
-        if (!park) return [];
-        // prefer alerts embedded in local data
-        if (Array.isArray(park.alerts) && park.alerts.length) return park.alerts;
-        // otherwise return empty list (do not attempt network calls)
+        // small manual mapping for demo ids -> official NPS parkCode to improve matching
+        const PARK_CODE_MAP = {
+          'yellowstone':'yell',
+          'yosemite':'yose',
+          'grandcanyon':'grca',
+          'zion':'zion',
+          'acadia':'acad',
+          'everglades':'ever',
+          'rockymountain':'romo'
+        };
+        // prefer explicit mapping when available
+        const mapped = PARK_CODE_MAP[park.id];
+        if (mapped){
+          try{
+            const rmap = await fetch(`/api/nps/alerts?parkCode=${encodeURIComponent(mapped)}&limit=50`);
+            if (rmap.ok){ const jm = await rmap.json(); const dm = jm && jm.data; if (Array.isArray(dm) && dm.length) return dm; }
+          }catch(e){ /* continue to other fallbacks */ }
+        }
+
+        // Try common parkCode/id fields
+        const tryCodes = [];
+        if (park.parkCode) tryCodes.push(park.parkCode);
+        if (park.id) tryCodes.push(park.id);
+        // de-dupe
+        const seen = new Set();
+        for (const c of tryCodes){ if(!c) continue; if(seen.has(c)) continue; seen.add(c);
+          try{
+            const res = await fetch(`/api/nps/alerts?parkCode=${encodeURIComponent(c)}&limit=50`);
+            if (res.ok){ const j = await res.json(); const arr = j && j.data; if (Array.isArray(arr) && arr.length) return arr; }
+          }catch(e){ /* ignore and continue */ }
+        }
+
+        // fallback: search NPS parks by name and pick the nearest (if coordinates available)
+        if (park.name){
+          try{
+            const res2 = await fetch(`/api/nps/parks?q=${encodeURIComponent(park.name)}&limit=5`);
+            if (!res2.ok) return [];
+            const j2 = await res2.json();
+            const arr = j2 && j2.data;
+            if (Array.isArray(arr) && arr.length){
+              const parseNum = s => { const v = parseFloat(s); return isFinite(v) ? v : null };
+              const lat0 = parseNum(park.latitude || park.lat || (park.latLong && park.latLong.split(',')[0]));
+              const lon0 = parseNum(park.longitude || park.lon || (park.latLong && park.latLong.split(',')[1]));
+              let match = null;
+              if (lat0 != null && lon0 != null){
+                function haversine(aLat,aLon,bLat,bLon){
+                  const R = 6371; const toRad = v => v*Math.PI/180;
+                  const dLat = toRad(bLat-aLat); const dLon = toRad(bLon-aLon);
+                  const la = toRad(aLat); const lb = toRad(bLat);
+                  const t = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(la)*Math.cos(lb)*Math.sin(dLon/2)*Math.sin(dLon/2);
+                  return 2*R*Math.atan2(Math.sqrt(t), Math.sqrt(1-t));
+                }
+                let best = Infinity;
+                arr.forEach(it => {
+                  const lat1 = parseNum(it.latitude || (it.latLong && it.latLong.split(',')[0]));
+                  const lon1 = parseNum(it.longitude || (it.latLong && it.latLong.split(',')[1]));
+                  if (lat1==null || lon1==null) return;
+                  const d = haversine(lat0,lon0,lat1,lon1);
+                  if (d < best){ best = d; match = it; }
+                });
+              }
+              if (!match) match = arr.find(it => (it.fullName && it.fullName.toLowerCase().includes(park.name.toLowerCase())) || (it.name && it.name.toLowerCase().includes(park.name.toLowerCase())) ) || arr[0];
+              if (match && match.parkCode){
+                try{
+                  const r3 = await fetch(`/api/nps/alerts?parkCode=${encodeURIComponent(match.parkCode)}&limit=50`);
+                  if (r3.ok){ const j3 = await r3.json(); const a3 = j3 && j3.data; if (Array.isArray(a3)) return a3; }
+                }catch(e){ /* ignore */ }
+              }
+            }
+          }catch(e){ /* ignore */ }
+        }
         return [];
       }catch(e){ return [] }
     }
@@ -471,25 +541,120 @@ function showDetail(p){
     if (imgEl){
       // prefer NPS-style array, otherwise p.image or p.photo
       const src = (p.images && p.images[0] && p.images[0].url) ? p.images[0].url : (p.image || p.photo || '');
-  if (src){ imgEl.src = src; imgEl.alt = p.name + ' photo'; imgEl.dataset.real = '1'; }
-  else { imgEl.src = 'assets/placeholder.svg'; imgEl.alt = 'No image'; imgEl.dataset.real = '0'; }
-  imgEl.onerror = ()=>{ imgEl.src = 'assets/placeholder.svg'; imgEl.dataset.real = '0'; };
+      if (src){ imgEl.src = src; imgEl.alt = p.name + ' photo'; imgEl.dataset.real = '1'; }
+      else { imgEl.src = '/assets/placeholder.svg'; imgEl.alt = 'No image'; imgEl.dataset.real = '0'; }
+      imgEl.onerror = ()=>{ imgEl.src = '/assets/placeholder.svg'; imgEl.dataset.real = '0'; };
       imgEl.onclick = ()=>{ if (imgEl.dataset.real === '1') window.open(imgEl.src, '_blank'); };
       if (creditEl) { creditEl.style.display = 'none'; creditEl.textContent = ''; }
     }
   }catch(e){ /* ignore image errors */ }
 
-  // Local-only image lookup: prefer images embedded in the local park data
+  // try to fetch images from the NPS API via the server proxy when possible
   async function fetchNpsParkImages(park){
     try{
-      if (!park) return [];
-      // NPS-style array of images
-      if (Array.isArray(park.images) && park.images.length) return park.images.map(it=> (typeof it === 'string') ? {url:it, credit:''} : ({ url: it.url || '', credit: it.credit || it.title || '' }));
-      // legacy single-image fields
-      if (park.image) return [{ url: park.image, credit: '' }];
-      if (park.photo) return [{ url: park.photo, credit: '' }];
-      return [];
-    }catch(e){ return [] }
+      // small manual mapping for demo ids -> official NPS parkCode to improve matching
+      const PARK_CODE_MAP = {
+        'yellowstone':'yell',
+        'yosemite':'yose',
+        'grandcanyon':'grca',
+        'zion':'zion',
+        'acadia':'acad',
+        'everglades':'ever',
+        'rockymountain':'romo'
+      };
+      const mapped = PARK_CODE_MAP[park.id];
+      if (mapped){
+        const rmap = await fetch(`/api/nps/parks?parkCode=${encodeURIComponent(mapped)}&limit=1`);
+        if (rmap.ok){ const jm = await rmap.json(); const dm = jm && jm.data && jm.data[0]; if (dm && dm.images && dm.images.length) return { images: dm.images.map(it=>({url:it.url,credit:it.credit||it.title||''})) } }
+      }
+      // First try parkCode or id (some demo ids match parkCode)
+      const parkCode = park.parkCode || park.id || null;
+      if (parkCode){
+        const res = await fetch(`/api/nps/parks?parkCode=${encodeURIComponent(parkCode)}&limit=1`);
+        if (res.ok){
+          const j = await res.json();
+          const data = j && j.data && j.data[0];
+          if (data && data.images && data.images.length) return { images: data.images.map(it=>({url:it.url,credit:it.credit||it.title||''})) };
+        }
+      }
+      // fallback: search by park name using q param
+      if (park.name){
+        const res2 = await fetch(`/api/nps/parks?q=${encodeURIComponent(park.name)}&limit=5`);
+  if (!res2.ok) return null;
+  const j2 = await res2.json();
+  const arr = j2 && j2.data;
+  if (Array.isArray(arr) && arr.length){
+            // if we have coordinates for our local park, pick the NPS result nearest by lat/lon
+            const parseNum = s => { const v = parseFloat(s); return isFinite(v) ? v : null };
+            const lat0 = parseNum(park.latitude || park.lat || (park.latLong && park.latLong.split(',')[0]));
+            const lon0 = parseNum(park.longitude || park.lon || (park.latLong && park.latLong.split(',')[1]));
+            let match = null;
+            if (lat0 != null && lon0 != null){
+              function haversine(aLat,aLon,bLat,bLon){
+                const R = 6371; const toRad = v => v*Math.PI/180;
+                const dLat = toRad(bLat-aLat); const dLon = toRad(bLon-aLon);
+                const la = toRad(aLat); const lb = toRad(bLat);
+                const t = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(la)*Math.cos(lb)*Math.sin(dLon/2)*Math.sin(dLon/2);
+                return 2*R*Math.atan2(Math.sqrt(t), Math.sqrt(1-t));
+              }
+              let best = Infinity;
+              arr.forEach(it => {
+                const lat1 = parseNum(it.latitude || (it.latLong && it.latLong.split(',')[0]));
+                const lon1 = parseNum(it.longitude || (it.latLong && it.latLong.split(',')[1]));
+                if (lat1==null || lon1==null) return;
+                const d = haversine(lat0,lon0,lat1,lon1);
+                if (d < best){ best = d; match = it; }
+              });
+            }
+            // fallback to simple name match or first item
+            if (!match) match = arr.find(it => (it.fullName && it.fullName.toLowerCase().includes(park.name.toLowerCase())) || (it.name && it.name.toLowerCase().includes(park.name.toLowerCase())) ) || arr[0];
+            if (match && match.images && match.images.length) return { images: match.images.map(it=>({url:it.url,credit:it.credit||it.title||''})) };
+          }
+      }
+      return null;
+    }catch(e){ return null }
+  }
+
+  // fetch and apply NPS images asynchronously (do not block UI)
+  (async ()=>{
+    try{
+      const npsImg = await fetchNpsParkImages(p);
+      const imgEl = document.getElementById('parkImage');
+      const creditEl = document.getElementById('heroCredit');
+      if (npsImg && Array.isArray(npsImg.images) && npsImg.images.length){
+        parkImages = npsImg.images;
+        imgEl.src = parkImages[0].url; imgEl.dataset.real = '1'; imgEl.alt = p.name + ' photo';
+        if (creditEl && parkImages[0].credit){ creditEl.textContent = parkImages[0].credit; creditEl.style.display = 'block'; }
+      }
+    }catch(e){ /* ignore */ }
+  })();
+
+  // start tailored ambient sound for this park only if enabled for this park
+  try{
+    // Do not auto-start ambient audio when opening a park detail. Stop any playing ambient instead.
+    try{ _audioEngine.stop(); }catch(e){}
+  }catch(e){ console.warn('audio preset error', e); _audioEngine.stop(); }
+  if (p && p.challenge) {
+    const c = p.challenge;
+    if (challengeEl) challengeEl.textContent = (c.title || '') + ' — ' + (c.description || '');
+    _currentPackingActivity = `park-challenge:${p.id}`;
+    renderPacking(_currentPackingActivity, Array.isArray(c.packing) ? c.packing : []);
+  } else {
+    const acts = (window && window._activities) ? window._activities : null;
+    if (acts && Array.isArray(acts) && acts.length) {
+      const key = (p.id || p.name || '');
+      let h = 0; for (let i = 0; i < key.length; i++) { h = ((h << 5) - h) + key.charCodeAt(i); h |= 0; }
+      const day = new Date().getDate();
+      const idx = Math.abs(h + day) % acts.length;
+      const chosen = acts[idx];
+      if (challengeEl) challengeEl.textContent = chosen.title + ' — ' + (chosen.description || '');
+      _currentPackingActivity = chosen.id || `challenge-${idx}-${key}`;
+      renderPacking(_currentPackingActivity, chosen.packing || []);
+    } else {
+      if (challengeEl) challengeEl.textContent = 'No challenge available.';
+      _currentPackingActivity = p.id || `park-${p.name}`;
+      renderPacking(_currentPackingActivity, []);
+    }
   }
 
   // initialize goals checklist for this park
@@ -600,7 +765,7 @@ function showDetail(p){
         const preview = document.getElementById('goalPreview');
         if (!preview) return;
         if (parkImages && parkImages.length){ preview.src = parkImages[idx % parkImages.length].url; preview.style.display = 'block'; }
-  else { preview.src = 'assets/placeholder.svg'; preview.style.display = 'block'; }
+        else { preview.src = '/assets/placeholder.svg'; preview.style.display = 'block'; }
       });
       li.appendChild(chk); li.appendChild(span); li.appendChild(del); visitListEl.appendChild(li);
     });
@@ -618,7 +783,7 @@ function showDetail(p){
     if (visitBarEl) visitBarEl.style.width = pct + '%';
   }
 
-  // download goals as human-readable text (client-side)
+  // download goals as human-readable text
   const _downloadGoalsBtn = document.getElementById('downloadGoals');
   if (_downloadGoalsBtn) _downloadGoalsBtn.addEventListener('click', async ()=>{
     const key = p.id || p.name || ('park-'+p.name);
@@ -627,12 +792,14 @@ function showDetail(p){
       const lines = [];
       lines.push(`Goals for ${p.name} (${key})`);
       lines.push('');
-      (state.goals || []).forEach(g => { lines.push((g.done ? '[x] ' : '[ ] ') + g.text); });
+      (state.goals || []).forEach(g => {
+        lines.push((g.done ? '[x] ' : '[ ] ') + g.text);
+      });
       const content = lines.join('\n');
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const fileBase = String((p && (p.fullName||p.name)) ? (p.fullName||p.name) : key).replace(/[\s\/\\:]/g,'_').toLowerCase();
-      const a = document.createElement('a'); a.href = url; a.download = `${fileBase}-goals.txt`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      const res = await fetch('/api/save-file', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ filename: `${key}-goals.txt`, content }) });
+      const j = await res.json().catch(()=>null);
+      if (j && j.ok) alert('Saved to Downloads: ' + j.path);
+      else alert('Save failed');
     }catch(e){ alert('Save failed: '+String(e)) }
   });
 
@@ -667,10 +834,10 @@ function showDetail(p){
 
     try{
       const content = lines.join('\n');
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const fileBase = String((p && (p.fullName||p.name)) ? (p.fullName||p.name) : key).replace(/[\s\/\\:]/g,'_').toLowerCase();
-      const a = document.createElement('a'); a.href = url; a.download = `${fileBase}-report.txt`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      const res = await fetch('/api/save-file', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ filename: `${key}-report.txt`, content }) });
+      const j = await res.json().catch(()=>null);
+      if (j && j.ok) alert('Saved report to Downloads: ' + j.path);
+      else alert('Save failed');
     }catch(e){ alert('Save failed: '+String(e)) }
   });
 
@@ -703,13 +870,95 @@ function icsEscape(s){
   return out;
 }
 async function addToCalendar(p){
-  // Simplified local-only ICS export
-  const nameForSummary = (p && (p.fullName || p.name)) ? (p.fullName || p.name) : (p.id || 'Park visit');
-  const summary = `Visit ${nameForSummary}`;
-  const description = p && p.description ? p.description : '';
+  // Try to fetch the official NPS fullName for better spelling/formatting. Prefer actual "National Park" designations
+  let officialName = null;
+  try{
+    // small manual mapping for common/demo ids -> official NPS parkCode
+    const PARK_CODE_MAP = {
+      'yellowstone':'yell',
+      'yosemite':'yose',
+      'grandcanyon':'grca',
+      'zion':'zion',
+      'acadia':'acad',
+      'everglades':'ever',
+      'rockymountain':'romo'
+    };
+    // prefer an explicit parkCode when available; fallback to id
+    let parkCode = p.parkCode || p.id || null;
+    // strong special-case mappings: if the displayed name clearly indicates a well-known park, force that parkCode
+    try{
+      const pname = String(p.name || '').toLowerCase();
+      const SPECIAL_NAME_MAP = { 'yellowstone':'yell', 'yellow stone':'yell', 'yosemite':'yose', 'grand canyon':'grca', 'zion':'zion', 'acadia':'acad', 'everglades':'ever', 'rocky mountain':'romo', 'rockymountain':'romo' };
+      for (const key in SPECIAL_NAME_MAP){ if (pname.includes(key)) { parkCode = SPECIAL_NAME_MAP[key]; break; } }
+      // if still unset, try substring match against PARK_CODE_MAP keys
+      if (!parkCode && pname){
+        for (const k in PARK_CODE_MAP){ if (pname.includes(k)) { parkCode = PARK_CODE_MAP[k]; break; } }
+      }
+    }catch(e){}
+    // helper: haversine distance
+    function haversine(aLat,aLon,bLat,bLon){ const R=6371; const toRad=v=>v*Math.PI/180; const dLat=toRad(bLat-aLat); const dLon=toRad(bLon-aLon); const la=toRad(aLat); const lb=toRad(bLat); const t=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(la)*Math.cos(lb)*Math.sin(dLon/2)*Math.sin(dLon/2); return 2*R*Math.atan2(Math.sqrt(t), Math.sqrt(1-t)); }
+
+    if (parkCode){
+      try{
+        const res = await fetch(`/api/nps/parks?parkCode=${encodeURIComponent(parkCode)}&limit=1`);
+        if (res.ok){ const j = await res.json(); const d = j && j.data && j.data[0]; if (d && d.fullName) officialName = d.fullName; }
+      }catch(e){}
+    }
+
+    // If we still don't have an official match, search by name but prefer entries whose designation/fullName includes 'National Park'
+    if (!officialName && p.name){
+      try{
+        const res2 = await fetch(`/api/nps/parks?q=${encodeURIComponent(p.name)}&limit=5`);
+        if (res2.ok){
+          const j2 = await res2.json(); const arr = j2 && j2.data ? j2.data : [];
+          if (Array.isArray(arr) && arr.length){
+            const norm = s => (s||'').toLowerCase();
+            const isNatPark = c => {
+              const des = norm(c.designation);
+              const fn = norm(c.fullName);
+              // only accept explicit 'national park' (exclude 'national historical park' etc.)
+              if (des.includes('national park')) return true;
+              if (fn.includes('national park')) return true;
+              return false;
+            };
+            // prefer candidates that are explicitly National Parks
+            let candidates = arr.slice();
+            const filtered = candidates.filter(isNatPark);
+            if (filtered.length) candidates = filtered;
+
+            // if we have coordinates for the local park, pick the nearest candidate
+            const parseNum = s=>{ const v=parseFloat(s); return isFinite(v)?v:null };
+            const lat0 = parseNum(p.latitude || p.lat || (p.latLong && p.latLong.split(',')[0]));
+            const lon0 = parseNum(p.longitude || p.lon || (p.latLong && p.latLong.split(',')[1]));
+            let best = null;
+            if (lat0 != null && lon0 != null){
+              let bestDist = Infinity;
+              candidates.forEach(c=>{
+                const lat1 = parseNum(c.latitude || (c.latLong && c.latLong.split(',')[0]));
+                const lon1 = parseNum(c.longitude || (c.latLong && c.latLong.split(',')[1]));
+                if (lat1==null || lon1==null) return;
+                const d = haversine(lat0,lon0,lat1,lon1);
+                if (d < bestDist){ bestDist = d; best = c; }
+              });
+            }
+            if (!best && candidates.length){
+              // prefer a candidate whose fullName contains the local name
+              best = candidates.find(c=> norm(c.fullName).includes(norm(p.name))) || candidates[0];
+            }
+            if (best && best.fullName) officialName = best.fullName;
+          }
+        }
+      }catch(e){}
+    }
+  }catch(e){}
+
+  // create a simple 1-hour event tomorrow at 9am local
   const start = new Date(); start.setDate(start.getDate()+1); start.setHours(9,0,0,0);
-  const end = new Date(start.getTime() + 60*60*1000);
-  function toICSDate(d){ return d.toISOString().replace(/[-:]/g,'').split('.')[0] + 'Z'; }
+  const end = new Date(start.getTime()+60*60*1000);
+  function toICSDate(d){ return d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z' }
+  const nameForSummary = officialName || p.name || (p.id || 'Park visit');
+  const summary = `Visit ${nameForSummary}`;
+  const description = p.description || '';
   const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -724,12 +973,12 @@ async function addToCalendar(p){
     'END:VEVENT',
     'END:VCALENDAR'
   ].join('\r\n');
-  try{
-    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const fileBase = String(nameForSummary).replace(/[\s/\\:]/g,'_').toLowerCase();
-    const a = document.createElement('a'); a.href = url; a.download = `${fileBase}.ics`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  }catch(e){ console.warn('addToCalendar failed', e); alert('Failed to create calendar event'); }
+
+  const blob = new Blob([ics], {type:'text/calendar;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const fileBase = (officialName || p.id || p.name || 'event').replace(/[\s/\\:]/g,'_').toLowerCase();
+  const a = document.createElement('a'); a.href = url; a.download = `${fileBase}.ics`; document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
 }
 
 // Visit tracking helpers
@@ -738,45 +987,10 @@ function loadVisit(parkId){ try{ return JSON.parse(localStorage.getItem(visitKey
 function saveVisit(parkId,obj){ localStorage.setItem(visitKey(parkId), JSON.stringify(obj)) }
 
 (async ()=>{
-  async function loadLocalParks(){
-    try{
-  const res = await fetch('data/parks.json');
-      if (!res.ok) throw new Error('HTTP '+res.status);
-      const data = await res.json();
-      return data;
-    }catch(e){
-      console.warn('local parks load failed', e);
-      const el = document.getElementById('parks'); if (el) el.innerHTML = '<li style="opacity:.8">Failed to load parks data.</li>';
-      return [];
-    }
-  }
-
-  async function loadLocalActivities(){
-    try{
-  const res = await fetch('data/activities.json');
-      if (!res.ok) throw new Error('HTTP '+res.status);
-      const data = await res.json();
-      return data;
-    }catch(e){
-      console.warn('local activities load failed', e);
-      const el = document.getElementById('activities'); if (el) el.innerHTML = '<li style="opacity:.8">Failed to load activities.</li>';
-      return [];
-    }
-  }
-
   let parks = await fetchParks();
-  // defensive fallback: if fetchParks returned nothing, try loading the local data file directly
-  if (!parks || !Array.isArray(parks) || parks.length === 0){ parks = await loadLocalParks(); }
   // keep parks available globally so UI can refresh when favorites change
   try{ window._parks = parks }catch(e){}
   renderList(parks);
-  // ensure activities list is populated from local data if API not available
-  try{
-  let acts = await loadLocalActivities();
-    // render activities into DOM if element exists
-    const actListEl = document.getElementById('activities');
-    if (actListEl){ actListEl.innerHTML = ''; acts.forEach(a=>{ const li = document.createElement('li'); li.style.marginBottom='.5rem'; li.style.cursor='pointer'; li.textContent = a.title; li.title = a.description || ''; li.addEventListener('click', ()=>{ _currentPackingActivity = a.id || ('activity-'+a.id); document.getElementById('packingName').textContent = a.title || a.id; renderPacking(_currentPackingActivity, a.packing || []); }); actListEl.appendChild(li); }); }
-  }catch(e){ console.warn('activities render failed', e); }
   const search = document.getElementById('search');
   const useNps = document.getElementById('useNps');
 
@@ -814,23 +1028,45 @@ function saveVisit(parkId,obj){ localStorage.setItem(visitKey(parkId), JSON.stri
     searchTimeout = setTimeout(async ()=>{
       const q = (search && search.value) ? search.value.trim() : '';
       if (!q) { renderList(parks); return }
-  // always perform local search against loaded parks; ignore useNps toggle in local-only mode
+      if (useNps && useNps.checked) {
+        try{
+          const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+          if(res.ok){ const data = await res.json(); renderList(data); return }
+        }catch(e){ /* fallthrough */ }
+      }
       const lower = q.toLowerCase();
       renderList(parks.filter(p => p.name.toLowerCase().includes(lower) || p.state.toLowerCase().includes(lower) || (p.description && p.description.toLowerCase().includes(lower))));
     }, 300);
   });
 })();
 
-// Live NPS status check (local-only)
+// Live NPS status check
 async function checkNpsStatus(){
   const el = document.getElementById('npsStatus');
   if (!el) return false;
   try{
-    el.textContent = 'Live API: disabled (local mode)';
-    el.style.background = '#fde68a'; el.style.color = '#92400e';
-    const useNpsEl = document.getElementById('useNps'); if (useNpsEl) useNpsEl.checked = false;
-    return false;
-  }catch(e){ return false }
+    const res = await fetch('/api/api_key');
+    // handle non-JSON or non-OK responses gracefully
+    if (!res.ok) {
+      const text = await res.text().catch(()=>null);
+      el.textContent = `Live API: unreachable`;
+      el.style.background = '#fecaca'; el.style.color = '#7f1d1d';
+      const useNpsEl = document.getElementById('useNps'); if (useNpsEl) useNpsEl.checked = false;
+      return false;
+    }
+    let json = null;
+    try{ json = await res.json(); }catch(e){ json = null }
+    const useNpsEl = document.getElementById('useNps');
+    if (json && json.ok) {
+      el.textContent = 'Live API: OK'; el.style.background='#bbf7d0'; el.style.color='#065f46';
+      if (useNpsEl) useNpsEl.checked = true; // enable live API toggle when server confirms key works
+      return true;
+    } else {
+      el.textContent = `Live API: ${json && json.reason? json.reason : 'error'}`; el.style.background='#fecaca'; el.style.color='#7f1d1d';
+      if (useNpsEl) useNpsEl.checked = false;
+      return false;
+    }
+  }catch(e){ el.textContent = 'Live API: unreachable'; el.style.background='#fecaca'; el.style.color='#7f1d1d'; return false }
 }
 const _checkNpsBtn = document.getElementById('checkNps');
 if (_checkNpsBtn) _checkNpsBtn.addEventListener('click', checkNpsStatus);
@@ -840,12 +1076,11 @@ setTimeout(checkNpsStatus, 800);
 
 // fetch activities and show a daily challenge
 ;(async function(){
-  // Load activities from local file and ignore live API
   try{
-  const actsRes = await fetch('data/activities.json');
-    if (!actsRes.ok) throw new Error('HTTP ' + actsRes.status);
-    const acts = await actsRes.json();
-    if (acts && acts.length){
+    const res = await fetch('/api/activities');
+    if(!res.ok) throw new Error('no activities');
+    const acts = await res.json();
+    if(acts && acts.length){
       const idx = new Date().getDate() % acts.length;
       const chosen = acts[idx];
       const challengeEl = document.getElementById('challengeContent');
@@ -853,23 +1088,6 @@ setTimeout(checkNpsStatus, 800);
       // set current activity for packing and render interactive checklist (persisted in localStorage)
       _currentPackingActivity = chosen.id || `challenge-${idx}`;
       renderPacking(_currentPackingActivity, chosen.packing || []);
-      // render activities list if present in DOM
-      try{
-        const actListEl = document.getElementById('activities');
-        if (actListEl){
-          actListEl.innerHTML = '';
-          acts.forEach(a=>{
-            const li = document.createElement('li'); li.style.marginBottom='.5rem'; li.style.cursor='pointer';
-            li.textContent = a.title; li.title = a.description || '';
-            li.addEventListener('click', ()=>{
-              _currentPackingActivity = a.id || ('activity-'+a.id);
-              const pn = document.getElementById('packingName'); if (pn) pn.textContent = a.title || a.id;
-              renderPacking(_currentPackingActivity, a.packing || []);
-            });
-            actListEl.appendChild(li);
-          });
-        }
-      }catch(e){}
     }
   }catch(e){ const challengeEl = document.getElementById('challengeContent'); if (challengeEl) challengeEl.textContent = 'No challenge available.' }
 })();
@@ -937,13 +1155,10 @@ if (_downloadPackingBtn) _downloadPackingBtn.addEventListener('click', async ()=
     const content = lines.join('\n');
     // sanitize filename
     const fileBase = titleLine.replace(/[\s/\\:]/g,'_').toLowerCase();
-    // client-side download
-    try{
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = `${fileBase}.txt`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      alert('Downloaded: ' + `${fileBase}.txt`);
-    }catch(e){ alert('Save failed: ' + String(e)) }
+    const res = await fetch('/api/save-file', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ filename: `${fileBase}.txt`, content }) });
+    const j = await res.json().catch(()=>null);
+    if (j && j.ok) alert('Saved to Downloads: ' + j.path);
+    else alert('Save failed');
   }catch(e){ alert('Save failed: '+String(e)) }
 });
 
@@ -1164,7 +1379,7 @@ function renderNpsFacilitiesOnMap(facilities){
   const DISPLAY_MAP = { 'FEET': 'FEET' };
     const desiredPaths = order.map(n=>{
       const fname = NAME_MAP[n] ? NAME_MAP[n] : (n + '.mp3');
-  return encodeURI('assets/' + fname);
+      return encodeURI('/assets/' + fname);
     });
     // map existing playlist entries by url for reuse
     const existing = new Map(playlist.map(p=>[String(p.url||''), p]));
@@ -1268,7 +1483,18 @@ async function showAmenitiesForPark(p){
   try{ ensureAmenityLayerControls(); }catch(e){}
     try{ localStorage.setItem(cacheKey, JSON.stringify(els)); }catch(e){/* ignore storage full */}
     // also fetch NPS-managed facilities (if the proxy supports it)
-  // NPS facilities proxy disabled in local-only mode; rely on Overpass results only
+    try{
+      // prefer parkCode when available for more accurate results
+      const parkCode = (p.parkCode || p.id || '').toLowerCase();
+      if (parkCode){
+        const r = await fetch(`/api/nps/facilities?parkCode=${encodeURIComponent(parkCode)}&limit=200`);
+        if (r.ok){
+          const j = await r.json().catch(()=>null);
+          const facs = (j && j.data) || (Array.isArray(j) ? j : []);
+          if (facs && facs.length) renderNpsFacilitiesOnMap(facs);
+        }
+      }
+    }catch(e){ /* ignore NPS facility fetch errors */ }
   }catch(e){ console.warn('fetchAmenities failed', e); }
 }
 
