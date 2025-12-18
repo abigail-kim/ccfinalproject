@@ -1,77 +1,41 @@
 # National Parks
 
-A minimal website with a small local API that serves sample national park data.
+This web application allows you to browse a small sample of national parks from the National Park Service API.
 
-Run locally:
+Purpose:
+The purpose of this web application is to encourage people to spend more time outdoors. This app should help people to focus on themselves more to reduce any stress by setting goals, having challenges, and motivational messages.
 
-```bash
-# install dependencies
-npm init -y
-npm install express
+Concern:
+My concern with this web application is that people may compare their progress with that of other people, which can discourage and increase stress in some visitors.
 
-# start server
-node server.js
+API Integration:
+- NPS API
+- Leaflet
 
-# open http://localhost:3000
-```
+What's included for each National Park:
+- A map
+- Information
+- Add to calendar
+- Goal progress tracker
+    - can add goals
+    - download goals
+    - download report
+- Daily challenge
+- Packing checklist
+    - can add packing items
+    - download checklist
+- Park alerts
 
-Files:
-- `server.js` — Express server exposing `/api/parks` and serving static files
-- `data/parks.json` — sample data
-- `index.html`, `styles.css`, `app.js` — front-end
+Other features:
+- Can filter parks
+- Make favorites for certain parks
+- A music playlist
 
-New features
-- `.env.example` — example env that includes `NPS_API_KEY`
-- Rate limiting on the server (requires `express-rate-limit`)
-- `/api/nps/parks` — proxy to the official NPS API (needs `NPS_API_KEY`)
-- `/api/search?q=...` — unified search that queries local data and NPS (if configured)
-- Front-end: favorites (stored in localStorage) and a "Use live NPS API" toggle
+More about the music playlist:
+Initially, I wanted to implement different nature sounds tailored to each National Park. But later on, I switched to using this playlist that I've been listening to before called Green, by a Japanese environmental music composer, Hiroshi Yoshimura. I felt that this playlist matched well with the theme of this web application, as the songs included are known as environmental music and evoke the feelings of natural cycles.
 
-Notes about the diagnostic endpoint
-- The server exposes a lightweight diagnostic endpoint at `/api/api_key` that checks whether a valid NPS API key is configured and can reach the NPS service. The front-end calls this to show the "Live API" status and auto-enable the "Use live NPS API" toggle when the key works.
+Challenges I've faced:
+When I first began making this web application, I had a lot of struggles trying to get the NPS API to work, but I was soon able to fix that problem. Other than trying to get the web application to where I wanted it to be, I had the most trouble with creating the Live Deployment. I tried all the possible solutions (GitHub Pages, Netlify, Vercel) to get my API and features to work, but it was really hard to get the Live Deployment to work just as well as my local host. 
 
-Encouraging outdoor features
-- `data/activities.json` — curated short activities (hike, picnic, birdwatching) with packing lists
-- `/api/activities` — serves activities for the UI
-- Daily challenge panel on the site that rotates suggestions by the day
-- Packing checklist and an "Add to calendar" (.ics) export for planning visits
-
-Install the extra packages:
-
-```bash
-npm install express-rate-limit node-fetch dotenv
-```
-
-Using the NPS Developer API (optional)
-
-1. Register for an API key at https://www.nps.gov/subjects/developer/get-started.htm
-2. Copy `.env.example` to `.env` and set `NPS_API_KEY` to the key you received.
-
-The server accepts a few different environment variable names for backwards compatibility. Any of these will be detected automatically:
-
-- `NPS_API_KEY` (recommended)
-- `NATIONALPARKSERVICEAPIKEY`
-- `API_KEY`
-- `api_key` (lowercase)
-
-3. Install `dotenv` if you want to load `.env` automatically (optional):
-
-```bash
-npm install dotenv
-```
-
-4. Run the server with the env var set. Example (macOS / zsh):
-
-```bash
-# example using lowercase env name
-export api_key=your_key_here
-node server.js
-```
-
-The server exposes a proxy route `/api/nps/parks` that forwards queries to the NPS API while keeping your key on the server. The front-end will try `/api/nps/parks` first, then fall back to the bundled sample data.
-
-If you used a different env var name (for example `NATIONALPARKSERVICEAPIKEY`) the server will also pick it up automatically. To verify the server sees your key, start the server and watch the console for a message like:
-
-```
-Using NPS API key from NATIONALPARKSERVICEAPIKEY
-```
+Conclusion:
+Overall, I really enjoyed this final project, where we got to learn about and use the APIs. I especially really liked bringing my ideas to an actual web application as well. It took a lot of revisions to get it to work, but in the end, this project was really fun. 
