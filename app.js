@@ -988,6 +988,13 @@ function saveVisit(parkId,obj){ localStorage.setItem(visitKey(parkId), JSON.stri
 
 (async ()=>{
   let parks = await fetchParks();
+  // defensive fallback: if fetchParks returned nothing, try loading the local data file directly
+  if (!parks || !Array.isArray(parks) || parks.length === 0){
+    try{
+      const res = await fetch('/data/parks.json');
+      if (res.ok) parks = await res.json();
+    }catch(e){ console.warn('fallback load of /data/parks.json failed', e); }
+  }
   // keep parks available globally so UI can refresh when favorites change
   try{ window._parks = parks }catch(e){}
   renderList(parks);
@@ -1088,6 +1095,23 @@ setTimeout(checkNpsStatus, 800);
       // set current activity for packing and render interactive checklist (persisted in localStorage)
       _currentPackingActivity = chosen.id || `challenge-${idx}`;
       renderPacking(_currentPackingActivity, chosen.packing || []);
+      // render activities list if present in DOM
+      try{
+        const actListEl = document.getElementById('activities');
+        if (actListEl){
+          actListEl.innerHTML = '';
+          acts.forEach(a=>{
+            const li = document.createElement('li'); li.style.marginBottom='.5rem'; li.style.cursor='pointer';
+            li.textContent = a.title; li.title = a.description || '';
+            li.addEventListener('click', ()=>{
+              _currentPackingActivity = a.id || ('activity-'+a.id);
+              document.getElementById('packingName').textContent = a.title || a.id;
+              renderPacking(_currentPackingActivity, a.packing || []);
+            });
+            actListEl.appendChild(li);
+          });
+        }
+      }catch(e){}
     }
   }catch(e){ const challengeEl = document.getElementById('challengeContent'); if (challengeEl) challengeEl.textContent = 'No challenge available.' }
 })();
